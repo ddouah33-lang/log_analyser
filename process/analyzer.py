@@ -1,23 +1,15 @@
 """Module process : calcul des statistiques du dashboard."""
 from src.log_config import get_logger
+from process.geolocation import get_country
 
 logger = get_logger("process")
-
-
-def country_of(ip, ip_country):
-    """Pays d'une IP : correspondance par prefixe le plus long."""
-    best, best_len = "Inconnu", -1
-    for prefix, country in ip_country.items():
-        if ip.startswith(prefix) and len(prefix) > best_len:
-            best, best_len = country, len(prefix)
-    return best
 
 
 def failed_by_country(events, ip_country):
     result = {}
     for e in events:
         if not e["success"]:
-            country = country_of(e["ip"], ip_country)
+            country = get_country(e["ip"], ip_country)
             result[country] = result.get(country, 0) + 1
     return result
 
