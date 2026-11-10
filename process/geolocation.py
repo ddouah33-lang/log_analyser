@@ -2,7 +2,6 @@
 import re
 
 from src.log_config import get_logger
-from process.analyzer import country_of
 
 logger = get_logger("geolocation")
 
@@ -30,6 +29,15 @@ def is_private_ip(ip):
     )
 
 
+def country_from_table(ip, ip_country):
+    """Cherche le pays dans la table CSV : correspondance par prefixe le plus long."""
+    best, best_len = UNKNOWN, -1
+    for prefix, country in ip_country.items():
+        if ip.startswith(prefix) and len(prefix) > best_len:
+            best, best_len = country, len(prefix)
+    return best
+
+
 def get_country(ip, ip_country):
     """Retourne le pays d'une IP. Ne plante jamais : en cas de probleme, retourne 'Inconnu'.
 
@@ -43,10 +51,11 @@ def get_country(ip, ip_country):
         if is_private_ip(ip):
             logger.info("IP privee detectee : %s", ip)
             return LOCAL
-        country = country_of(ip, ip_country)
+        country = country_from_table(ip, ip_country)
         if country == UNKNOWN:
             logger.warning("Aucun pays trouve pour l'IP %s", ip)
         return country
     except Exception as e:  # securite : la geolocalisation ne doit jamais arreter le pipeline
         logger.error("Erreur inattendue en geolocalisant %s : %s", ip, e)
         return UNKNOWN
+    
